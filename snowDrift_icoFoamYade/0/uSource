@@ -28,12 +28,13 @@ boundaryField
 	inlet
 	{
 		type		calculated;
-		value		uniform (0.1 0 0);
+		value		uniform (0 0 0);
 	}
 
 	outlet
 	{
-		type		zeroGradient;
+		type		calculated;
+		value		uniform (0 0 0);
 	}
 }
 

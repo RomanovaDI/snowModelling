@@ -96,6 +96,10 @@
 #       should change the solver settings such as timestep, under relaxation factors, linear solver settings etc.
 #----------------------------------------------------------------------------------------------------------------#
 
+#from yade import pack, plot
+#import math
+#import random as rand
+#import numpy as np
 
 from __future__ import print_function
 import sys
@@ -111,42 +115,60 @@ fluidCoupling.getRank();            #part of Initialization.
 class simulation():
 
 	def __init__(self):
+
+		#Bounding box parameters:
 		epsilon = 1e-08
 		minval = epsilon
-		maxval = 1-epsilon
+		maxval = 1.-epsilon
 		length = maxval - minval
 		halflength = length / 2
-		radius = 0.01
-		radiusEpsilon = 0.5
+		youngBox = 4e9
+		poissonBox = 0.35
+		frictionAngleBox = 0#radians(70)
+		densityBox = 1500
+		restitCoefBox = 1	#Restitution coefficient
+		#O.periodic = True
+		#O.cell.setBox(maxval, maxval, maxval)
 
-		O.periodic = True
-		O.cell.setBox(maxval, maxval, maxval)
+		#Sphere parameters:
+		radiusSphere = 1e-3#1e-2
+		radiusEpsilonSphere = 0.5
+		numSphere=1000
+		youngSphere = 1e4#ice#5e6#1
+		poissonSphere = 0.2#0.4
+		frictionAngleSphere = radians(15)#radians(85)
+		densitySphere = 10#10
+		restitCoefSphere = 0.8	#Restitution coefficient of the particles
 
-		numspheres=1000
-		young = 1#ice#5e6#1
-		poisson = 0.2#0.4
-		density = 20
+		O.materials.append(FrictMat(young=youngSphere, poisson=poissonSphere, frictionAngle=frictionAngleSphere, density=densitySphere, label='spheremat'))
+		O.materials.append(FrictMat(young=youngBox, poisson=poissonBox, frictionAngle=frictionAngleBox, density=densityBox, label='wallmat'))
 
-		O.materials.append(FrictMat(young=young,poisson=poisson,frictionAngle=radians(85),density=density,label='spheremat'))
-		O.materials.append(FrictMat(young=4e10,poisson=0.35,frictionAngle=radians(70),density=1500,label='wallmat'))
+		#O.materials.append(CohFrictMat(young=youngSphere, poisson=poissonSphere, density=densitySphere, label='spheremat'))
+		#.materials.append(CohFrictMat(young=youngBox, poisson=poissonBox, density=densityBox, label='wallmat'))
+
+		#O.materials.append(ViscElMat(en=restitCoefSphere, et=0., young=youngSphere, poisson=poissonSphere, frictionAngle=frictionAngleSphere, density=densitySphere, label='spheremat'))
+		#O.materials.append(ViscElMat(en=restitCoefBox, et=0., young=youngBox, poisson=poissonBox, frictionAngle=frictionAngleBox, density=densityBox, label='wallmat'))
 
 		#wall coords, use facets for wall BC:
 		v0 = Vector3(minval, minval, minval)
 		v1 = Vector3(maxval, minval, minval)
 		v2 = Vector3(maxval, maxval, minval)
-		v3 = Vector3(maxval, minval, minval)
-
+		v3 = Vector3(minval, maxval, minval)
 		v4 = Vector3(minval,minval, maxval)
 		v5 = Vector3(maxval,minval, maxval)
 		v6 = Vector3(maxval,maxval, maxval)
 		v7 = Vector3(minval,maxval, maxval)
+		v9 = Vector3(maxval, minval, minval+halflength)
+		v10 = Vector3(maxval, maxval, minval+halflength)
 
 		ff0 = facet([v0,v1,v5], fixed=True, wire=True, material='wallmat')
 		ff1 = facet([v0,v5,v4], fixed=True, wire=True, material='wallmat')
 		bf0 = facet([v3,v7,v6], fixed=True, wire=True, material='wallmat')
 		bf1 = facet([v3,v6,v2], fixed=True, wire=True, material='wallmat')
 		lf0 = facet([v0,v4,v3], fixed=True, wire=False, material='wallmat')
-		lf1 = facet([v0,v7,v3], fixed=True, wire=False, material='wallmat')
+		lf1 = facet([v4,v7,v3], fixed=True, wire=False, material='wallmat')
+		#rf0 = facet([v1,v2,v10], fixed=True, wire=False, material='wallmat')
+		#rf1 = facet([v1,v10,v9], fixed=True, wire=False, material='wallmat')
 		rf0 = facet([v1,v2,v6], fixed=True, wire=False, material='wallmat')
 		rf1 = facet([v1,v6,v5], fixed=True, wire=False, material='wallmat')
 		uf0 = facet([v4,v5,v6], fixed=True, wire=False, material='wallmat')
@@ -155,11 +177,19 @@ class simulation():
 		df1 = facet([v0,v2,v1], fixed=True, wire=False, material='wallmat')
 		O.bodies.append([ff0, ff1, bf0, bf1, lf0, lf1, rf0, rf1, uf0, uf1, df0, df1])
 
-		#spheres
-		mn, mx= Vector3(minval+2*radius, minval+2*radius, minval+2*radius), Vector3(maxval-2*radius, maxval-2*radius, maxval-2*radius)
+		#fp = box(center=(halflength, 0., halflength),extents=(halflength, 0., halflength),fixed=True,wire=False,color = (0.,1.,0.),material = 'wallmat')
+		#bp = box(center=(halflength, length, halflength),extents=(halflength, 0., halflength),fixed=True,wire=False,color = (0.,1.,0.),material = 'wallmat')
+		#lp = box(center=(0., halflength, halflength),extents=(0., halflength, halflength),fixed=True,wire=False,color = (0.,1.,0.),material = 'wallmat')
+		#rp = box(center=(length, halflength, halflength),extents=(0., halflength, halflength),fixed=True,wire=False,color = (0.,1.,0.),material = 'wallmat')
+		#dp = box(center=(halflength, halflength, 0.),extents=(halflength, halflength, 0.),fixed=True,wire=False,color = (0.,1.,0.),material = 'wallmat')
+		#up = box(center=(halflength, halflength, length),extents=(halflength, halflength, 0.),fixed=True,wire=False,color = (0.,1.,0.),material = 'wallmat')
+		#O.bodies.append([fp, bp, lp, rp, dp,up])
 
+		#spheres
+		mn, mx= Vector3(minval, minval, minval), Vector3(maxval, maxval, maxval)
 		sp = pack.SpherePack()
-		sp.makeCloud(mn,mx,rMean=radius,rRelFuzz=radiusEpsilon, num=numspheres)
+		sp.makeCloud(mn,mx,rMean=radiusSphere,rRelFuzz=radiusEpsilonSphere, num=numSphere)
+		#sp.toSimulation(material='spheremat') #Send this packing to simulation with material Mat
 		O.bodies.append([sphere(center,rad,material='spheremat') for center,rad in sp])
 
 		sphereIDs = [b.id for b in O.bodies if type(b.shape)==Sphere]
@@ -169,26 +199,35 @@ class simulation():
 		fluidCoupling.setIdList(sphereIDs)
 		fluidCoupling.isGaussianInterp=False  #use pimpleFoamYade for gaussianInterp
 
-		O.dt=1e-4
+		O.dt=1e-5
 		#O.dynDt=False
 
 		O.engines=[
 			ForceResetter(),
-			InsertionSortCollider([Bo1_Sphere_Aabb(), Bo1_Facet_Aabb(), Bo1_Wall_Aabb()], allowBiggerThanPeriod=True),
+			InsertionSortCollider([Bo1_Sphere_Aabb(), Bo1_Facet_Aabb(), Bo1_Wall_Aabb(), Bo1_Box_Aabb()], allowBiggerThanPeriod=True),#True),
 			InteractionLoop(
 				[Ig2_Sphere_Sphere_ScGeom(),Ig2_Facet_Sphere_ScGeom()],
+				#[Ip2_ViscElMat_ViscElMat_ViscElPhys()],
+				#[Law2_ScGeom_ViscElPhys_Basic()]
 				[Ip2_FrictMat_FrictMat_FrictPhys()],
 				[Law2_ScGeom_FrictPhys_CundallStrack()]
+				#[Ip2_CohFrictMat_CohFrictMat_CohFrictPhys()],
+				#[Law2_ScGeom6D_CohFrictPhys_CohesionMoment()]
+				#[Ip2_2xInelastCohFrictMat_InelastCohFrictPhys()],
+				#[Law2_ScGeom6D_InelastCohFrictPhys_CohesionMoment()]
 			),
-			#GlobalStiffnessTimeStepper(timestepSafetyCoefficient=0.5, label = "ts"),
+			#Measurement, output files
+			PyRunner(command = 'measure()', virtPeriod = 0.02, label = 'measurement', dead = True),
+			GlobalStiffnessTimeStepper(timestepSafetyCoefficient=0.5, label = "ts"),
 			fluidCoupling, #to be called after timestepper
 			PyRunner(command='sim.printMessage()', iterPeriod= 1, label='outputMessage'),
 			NewtonIntegrator(damping=0.0, gravity = (0.0, 0.0, -9.81)),# add small damping in case of stability issues.. ~ 0.1 max, also note : If gravity is needed, set it in constant/g dir
-			VTKRecorder(fileName='yadep/3d-vtk-',recorders=['spheres'],virtPeriod=0.02)#iterPeriod=1000)
+			VTKRecorder(fileName='yadep/3d-vtk-',recorders=['spheres', 'facets', 'intr', 'force'],virtPeriod=0.02)#iterPeriod=1000)
 		]
 
 	def printMessage(self):
 		print("********************************YADE-ITER = " + str(O.iter) +" **********************************")
+		print("********************************YADE-TIME = " + str(O.time) +" **********************************")
 #		if O.iter == 4000:
 #			maxVel = 0.05
 #			for b in O.bodies:
@@ -198,11 +237,16 @@ class simulation():
 #						raise ValueError("Body velocity exceeds imposed shear velocity by ", abs(bodyVel-maxVel))
 
 	def irun(self,num):
+#		endTime = 1
+#		if (O.time <= endTime):
+#			O.step()
 		O.run(num,1)
 
 if __name__=="__main__":
 	sim = simulation()
-	sim.irun(10000)
+	sim.irun(100000)
+	#sim.irun(1)
+	#print("body id = ", O.bodies[34].id)
 	fluidCoupling.killMPI()
 
 import builtins
