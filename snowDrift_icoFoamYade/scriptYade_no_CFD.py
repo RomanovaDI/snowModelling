@@ -96,19 +96,19 @@
 #       should change the solver settings such as timestep, under relaxation factors, linear solver settings etc.
 #----------------------------------------------------------------------------------------------------------------#
 
-#from yade import pack, plot
-#import math
-#import random as rand
-#import numpy as np
+from yade import pack, plot
+import math
+import random as rand
+import numpy as np
 
-from __future__ import print_function
-import sys
-from yadeimport import *
-from yade.utils import *
+#from __future__ import print_function
+#import sys
+#from yadeimport import *
+#from yade.utils import *
 
-initMPI()                           #Initialize the mpi environment, always required.
-fluidCoupling = yade.FoamCoupling();     #Initialize the engine
-fluidCoupling.getRank();            #part of Initialization.
+#initMPI()                           #Initialize the mpi environment, always required.
+#fluidCoupling = yade.FoamCoupling();     #Initialize the engine
+#fluidCoupling.getRank();            #part of Initialization.
 
 
 #example of spheres in shear flow : two-way point force coupling
@@ -175,14 +175,14 @@ class simulation():
 		sp.makeCloud(mn,mx,rMean=radiusSphere,rRelFuzz=radiusEpsilonSphere, num=numSphere)
 		O.bodies.append([sphere(center,rad,material='spheremat') for center,rad in sp])
 
-		sphereIDs = [b.id for b in O.bodies if type(b.shape)==Sphere]
+#sphereIDs = [b.id for b in O.bodies if type(b.shape)==Sphere]
 
 		#coupling engine settings
-		fluidCoupling.setNumParticles(len(sphereIDs))
-		fluidCoupling.setIdList(sphereIDs)
-		fluidCoupling.isGaussianInterp=False  #use pimpleFoamYade for gaussianInterp
+#fluidCoupling.setNumParticles(len(sphereIDs))
+#fluidCoupling.setIdList(sphereIDs)
+#fluidCoupling.isGaussianInterp=False  #use pimpleFoamYade for gaussianInterp
 
-		O.dt=1e-5
+		O.dt=1e-6
 
 		O.engines=[
 			ForceResetter(),
@@ -194,11 +194,11 @@ class simulation():
 			),
 			#Measurement, output files
 			PyRunner(command = 'measure()', virtPeriod = 0.02, label = 'measurement', dead = True),
-			GlobalStiffnessTimeStepper(timestepSafetyCoefficient=0.5, label = "ts"),
-			fluidCoupling, #to be called after timestepper
-			PyRunner(command='sim.printMessage()', iterPeriod= 1, label='outputMessage'),
+#GlobalStiffnessTimeStepper(timestepSafetyCoefficient=0.5, label = "ts"),
+#fluidCoupling, #to be called after timestepper
+#PyRunner(command='sim.printMessage()', iterPeriod= 1, label='outputMessage'),
 			NewtonIntegrator(damping=0.0, gravity = (0.0, 0.0, -9.81)),# add small damping in case of stability issues.. ~ 0.1 max, also note : If gravity is needed, set it in constant/g dir
-			VTKRecorder(fileName='yadep/3d-vtk-',recorders=['spheres', 'facets', 'intr', 'force'],virtPeriod=0.02)#iterPeriod=1000)
+#VTKRecorder(fileName='yadep/3d-vtk-',recorders=['spheres', 'facets', 'intr', 'force'],virtPeriod=0.02)#iterPeriod=1000)
 		]
 
 	def printMessage(self):
@@ -206,12 +206,13 @@ class simulation():
 		print("********************************YADE-TIME = " + str(O.time) +" **********************************")
 
 	def irun(self,num):
-		O.run(num,1)
+#O.run(num,1)
+		O.run()
 
 if __name__=="__main__":
 	sim = simulation()
 	sim.irun(100000)
-	fluidCoupling.killMPI()
+#fluidCoupling.killMPI()
 
 import builtins
 builtins.sim=sim
